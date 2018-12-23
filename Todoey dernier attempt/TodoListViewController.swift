@@ -9,7 +9,7 @@
 import UIKit
 //don't forget to change the superclass from UIVIEWCONTROLLER TO UITABLEVIEWCONTROLLER
 class TodoListViewController: UITableViewController {
-    let itemArray = ["Find Mike","Buy Eggs","Destroy zaboz"]
+    var itemArray = ["Find Mike","Buy Eggs","Destroy zaboz"]
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -36,6 +36,24 @@ class TodoListViewController: UITableViewController {
         }
         tableView.deselectRow(at: indexPath, animated: true)//flashes grey
         
+    }
+    
+    //MARK - Add new Items
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        var textField = UITextField() // creating this variable so it can be accessed by all the completion handlers! we're increasing the scope.
+        let alert = UIAlertController(title: "Add new todoey item", message: "", preferredStyle: .alert)
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            //What will happen once the user clicks the add item button
+            self.itemArray.append(textField.text!) //force unwrap it since string will never be equal to nil even if empty, its set to empty string
+            // since its closure you have to add self to explain where the item array exists ie the current class
+            self.tableView.reloadData()
+        }
+            alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "Creeaate item meeeec"
+            textField = alertTextField
+        }
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
     }
 }
 
