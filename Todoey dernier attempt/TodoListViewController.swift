@@ -10,8 +10,12 @@ import UIKit
 //don't forget to change the superclass from UIVIEWCONTROLLER TO UITABLEVIEWCONTROLLER
 class TodoListViewController: UITableViewController {
     var itemArray = ["Find Mike","Buy Eggs","Destroy zaboz"]
+    let defaults = UserDefaults.standard
     override func viewDidLoad() {
         super.viewDidLoad()
+        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
+            itemArray = items
+        } // casting it as an array of strings
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -46,6 +50,7 @@ class TodoListViewController: UITableViewController {
             //What will happen once the user clicks the add item button
             self.itemArray.append(textField.text!) //force unwrap it since string will never be equal to nil even if empty, its set to empty string
             // since its closure you have to add self to explain where the item array exists ie the current class
+            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
             self.tableView.reloadData()
         }
             alert.addTextField { (alertTextField) in
