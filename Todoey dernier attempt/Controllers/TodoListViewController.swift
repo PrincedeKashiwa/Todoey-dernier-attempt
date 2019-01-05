@@ -10,17 +10,15 @@ import UIKit
 //don't forget to change the superclass from UIVIEWCONTROLLER TO UITABLEVIEWCONTROLLER
 class TodoListViewController: UITableViewController {
     var itemArray = [Item]()
-    let defaults = UserDefaults.standard //singleton from the class userdefaults
+    let datafilepath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        let newitem = Item()
-        newitem.title = "Find Mike"
-        itemArray.append(newitem)
-        if let items = defaults.array(forKey: "ToDoListArray") as? [Item] {
-            itemArray = items
-         // casting it as an array of strings
-        // Do any additional setup after loading the view, typically from a nib.
-    }
+    
+    
+        loaditems()
+        
+
     }
 
     //MARK - TableView Datasource
@@ -38,9 +36,8 @@ class TodoListViewController: UITableViewController {
     }
     //MARK - TABLEVIEW Delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //print (itemArray[indexPath.row])
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done //equals the opposite of current itemarrayindexpath.row.done
-        tableView.reloadData()
+        saveitems()
         tableView.deselectRow(at: indexPath, animated: true)//flashes grey
         
     }
@@ -55,8 +52,7 @@ class TodoListViewController: UITableViewController {
             newItem.title = textField.text!
             self.itemArray.append(newItem) //force unwrap it since string will never be equal to nil even if empty, its set to empty string
             // since its closure you have to add self to explain where the item array exists ie the current class
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            self.tableView.reloadData()
+            self.saveitems()
         }
             alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Creeaate item meeeec"
@@ -65,5 +61,25 @@ class TodoListViewController: UITableViewController {
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
     }
+        func saveitems () {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: datafilepath!)
+        } catch {
+            print("error encoding item array , \(error)")
+            
+        }
+        self.tableView.reloadData()
 }
-
+    
+    func loaditems() {
+        if let data = try? Data(contentsOf: datafilepath!) {
+        let decoder = PropertyListDecoder()
+            do { itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print(";..'")
+            }
+    }
+}
+}

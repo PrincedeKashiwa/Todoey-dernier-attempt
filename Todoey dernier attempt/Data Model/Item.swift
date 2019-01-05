@@ -8,7 +8,8 @@
 
 import Foundation
 //don't have to call your class the same as your file name but people generally do it
-class Item  {
+//the item able to encode itself in a json etc..
+class Item: Codable  {
     var title : String = ""
     var done : Bool = false
 }
