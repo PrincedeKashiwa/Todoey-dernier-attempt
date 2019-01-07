@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreData //coredata framework
+import RealmSwift
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -16,8 +17,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        //print out the path for our user defaults file and find the plist that stores our data, "entering the sandbox"
-        
+        print(Realm.Configuration.defaultConfiguration.fileURL)
+        do {
+            //realm is a new persistent container
+            let realm = try Realm()
+
+        } catch {
+            print ("erroore")
+        }
         return true
     }
 
