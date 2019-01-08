@@ -13,5 +13,6 @@ class Category: Object {
     @objc dynamic var name: String = ""
     let items = List<Item>() //Initializing this as an empty list containing Item objects, list is like an array
     // [Int]() is equivalent to Array<Int>(), inside each catgory there is this thing cxalled items that points to item objects
+    @objc dynamic var colour: String = ""
     
 }

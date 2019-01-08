@@ -8,9 +8,10 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 //don't forget to change the superclass from UIVIEWCONTROLLER TO UITABLEVIEWCONTROLLER
 //setting the class as delegate of search bar + control drag the search bar to the yellow button it represent the view controler could have just added, UIsearchbarcontroller delegater instead we use an extension
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
     var toDoItems : Results<Item>?
     let realm = try! Realm()
     var selectedCategory : Category? {
@@ -22,7 +23,20 @@ class TodoListViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print (FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        tableView.rowHeight = 80.0
+        tableView.separatorStyle = .none
+        
+    }
+    //viewdidAppear gets called after view did load and after navcontroller fully loaded that's why we put it there, its a different lifecycle time point
+    override func viewDidAppear(_ animated: Bool) {
+        //ifselectedCategory?.colour not nil will proceed to this method
+        //title is the name on navbar
+        title = selectedCategory!.name
+        if let colourHex = selectedCategory?.colour {
+            //guarding against scenarios where navbar is nil
+            guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist")}
+            navBar.barTintColor = UIColor(hexString: colourHex)
+        }
     }
 
     //MARK - TableView Datasource
@@ -31,12 +45,17 @@ class TodoListViewController: UITableViewController {
         return toDoItems?.count ?? 1
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         if let item = toDoItems?[indexPath.row] {
         cell.textLabel?.text = item.title
+            //okay to force unraw since the initial if let only occurs if todoitems not empty
+            //if not nil then darken it
+            if let colour = UIColor(hexString: selectedCategory!.colour)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(toDoItems!.count)) {
+                    cell.backgroundColor = colour
+                    cell.textLabel?.textColor = ContrastColorOf(colour, returnFlat: true)
+                }
         // ternary operator. value = condition ? value if true : value if false
         cell.accessoryType = item.done == true ? .checkmark : .none
-        
         } else {
             cell.textLabel?.text = "No Items Added"
         }
@@ -66,6 +85,7 @@ class TodoListViewController: UITableViewController {
                 try self.realm.write {
                     let newItem = Item()
                     newItem.title = textField.text! //done already specified in the class
+                    newItem.dateCreated = Date()
                     currentCategory.items.append(newItem)}
                 }catch{
                     print("Error Saving Items \(error)")}
@@ -85,26 +105,36 @@ class TodoListViewController: UITableViewController {
     func loaditems() {
         toDoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
 }
+override func updateModel(at indexPath: IndexPath) {
+    if let itemForDeletion = self.toDoItems?[indexPath.row] {
+        do {
+            try self.realm.write {
+                self.realm.delete(itemForDeletion)
+            }
+        } catch {
+            print("Error deleting category \(error)")
+        }
+        tableView.reloadData()
+    }
+}
+}
 // try to split up fonctionalities for code organization and debug it easier
 //MARK: - Search bar Methods
-//extension TodoListViewController: UISearchBarDelegate {
-//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-//        let request : NSFetchRequest<Item> = Item.fetchRequest()
-//        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!) //which items have a title that contains the searchBar.text not case and diacretic sensitive caps accents etc
-//
-//        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-//        loaditems(with: request)
-//
-//    }
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        if searchBar.text?.count == 0 {
-//            loaditems()
-//            //dispatchqueue decides what goes on the foreground and background, here forcing it in the foreground, where you should update your UI elements
-//
-//            DispatchQueue.main.async {
-//                searchBar.resignFirstResponder() //relinquish its status as first responder so no longer the thing selected, no keyboard no cursor.
-//            }
-//
-//        }
-//    }
+extension TodoListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        toDoItems = toDoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+        tableView.reloadData()
+
+    }
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loaditems()
+            //dispatchqueue decides what goes on the foreground and background, here forcing it in the foreground, where you should update your UI elements
+
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder() //relinquish its status as first responder so no longer the thing selected, no keyboard no cursor.
+            }
+
+        }
+}
 }

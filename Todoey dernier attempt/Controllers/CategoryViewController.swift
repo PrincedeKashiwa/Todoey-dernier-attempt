@@ -8,13 +8,16 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
 let realm = try! Realm()
     var categories : Results<Category>? // results used in realm just a specific data type, making it an optional not force unwrapping!
     override func viewDidLoad() {
         super.viewDidLoad()
       loadCategories()
+    tableView.rowHeight = 80.0
+    tableView.separatorStyle = .none
 
     }
 
@@ -23,8 +26,10 @@ let realm = try! Realm()
         return categories?.count ?? 1 // if it is nil : make it equal to 1, nil coalescent operator
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        //cell that comes from superclass
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet"
+        cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].colour ?? "0096FF")!
         return cell
     }
     //MARK: - Tableview Delegate Methods
@@ -41,7 +46,7 @@ let realm = try! Realm()
     //MARK: - Data Manipulation Methods
     func loadCategories() {
         categories = realm.objects(Category.self) //category not opaque pointer
-        tableView.reloadData()
+        tableView.reloadData() //this reloads the data sources methods "override func..."
     }
     //opaque pointer
     func save(category : Category) {
@@ -55,13 +60,27 @@ let realm = try! Realm()
         tableView.reloadData()
     }
     
+    //MARK: - Delete Data from Swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryForDeletion = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error deleting category \(error)")
+            }
+            tableView.reloadData()
+        }
+    }
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textfield = UITextField()
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
             let newCategory = Category()
             newCategory.name = textfield.text!
-//            self.categories.append(newCategory) no need for this because of the auto updating capabilities of results
+            newCategory.colour = UIColor.randomFlat.hexValue()
             self.save(category: newCategory)
         }
         alert.addAction(action)
@@ -72,8 +91,6 @@ let realm = try! Realm()
         present(alert, animated: true, completion: nil)
         
         }
-    
-    
-    
+
     
 }
