@@ -14,6 +14,9 @@ import ChameleonFramework
 class TodoListViewController: SwipeTableViewController {
     var toDoItems : Results<Item>?
     let realm = try! Realm()
+    
+    @IBOutlet weak var searchBar: UISearchBar!
+    
     var selectedCategory : Category? {
         //didset called once selectedcategory is assigned a value, its value is assigned on the category view controller
         didSet{
@@ -29,16 +32,29 @@ class TodoListViewController: SwipeTableViewController {
     }
     //viewdidAppear gets called after view did load and after navcontroller fully loaded that's why we put it there, its a different lifecycle time point
     override func viewDidAppear(_ animated: Bool) {
-        //ifselectedCategory?.colour not nil will proceed to this method
         //title is the name on navbar
-        title = selectedCategory!.name
-        if let colourHex = selectedCategory?.colour {
-            //guarding against scenarios where navbar is nil
-            guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist")}
-            navBar.barTintColor = UIColor(hexString: colourHex)
-        }
+        title = selectedCategory?.name
+        //use guard let when it will succeed 99% of the time but if lets when 50/50!
+        guard let colourHex = selectedCategory?.colour else {fatalError()}
+        updateNavBar(withHexCode: colourHex)
     }
-
+    
+    //use this when going back to category view
+    override func viewWillDisappear(_ animated: Bool) {
+        updateNavBar(withHexCode: "0096FF")
+    }
+    func updateNavBar(withHexCode colourHexCode: String) {
+        //guarding against scenarios where navbar is nil
+        guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist")}
+        guard let navBarColour = UIColor(hexString: colourHexCode) else {fatalError()}
+        navBar.barTintColor = navBarColour //all the nav bar colour
+        //tint color applies to all buttons on nav bar
+        navBar.tintColor = ContrastColorOf(navBarColour, returnFlat: true)
+        //changes title font otherwise can't see it
+        navBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor : ContrastColorOf(navBarColour, returnFlat: true)]
+        searchBar.barTintColor = navBarColour
+        
+    }
     //MARK - TableView Datasource
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

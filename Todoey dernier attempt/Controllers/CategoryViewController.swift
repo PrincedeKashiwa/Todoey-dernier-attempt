@@ -28,8 +28,12 @@ let realm = try! Realm()
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         //cell that comes from superclass
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet"
-        cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].colour ?? "0096FF")!
+        if let category = categories?[indexPath.row] {
+        cell.textLabel?.text = category.name
+        guard let categorycolour = UIColor(hexString: category.colour) else {fatalError()}
+        cell.backgroundColor = categorycolour
+        cell.textLabel?.textColor = ContrastColorOf(categorycolour, returnFlat: true)
+        }
         return cell
     }
     //MARK: - Tableview Delegate Methods
